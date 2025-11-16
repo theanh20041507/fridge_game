@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giải cứu học sinh khỏi tủ lạnh</title>
+<style>
+body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hidden; }
+#startScreen, #endScreen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: url('assets/background.png') no-repeat center/cover;
+}
+#gameScreen { display:none; background: url('assets/background.png') no-repeat center/cover; width:100%; height:100vh; position:relative; }
+#fridgeContainer { position:relative;transform: scale(1.2); width:500px; height:400px; margin:20px auto; background:url('assets/fridge.png') no-repeat center/cover; }
+.student { width:60px; height:60px; position:absolute; bottom:150px; transition: all 0.5s ease; }
+#heatBar { width:300px; height:20px; border:2px solid #000; margin:10px auto; position:relative; }
+#heatFill { height:100%; width:0%; background-color:#00ff00; transition: width 0.3s, background-color 0.3s; }
+#codes { margin:10px; font-size:18px; color:#fff; text-shadow:1px 1px #000; }
+.question { margin:20px; font-size:20px; color:#fff; text-shadow:1px 1px #000; }
+.answers button { margin:5px; padding:10px 20px; font-size:16px; cursor:pointer; }
+.frozen { filter: brightness(50%) grayscale(80%) blur(1px); }
+#snowflake { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; }
+.snow { position:absolute; width:10px; height:10px; background:white; border-radius:50%; opacity:0.8; animation:fall linear infinite; }
+@keyframes fall { 0% { transform: translateY(-10px); } 100% { transform: translateY(100vh); } }
+@keyframes shake { 0% { transform: translateX(0px); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0px); } }
+@keyframes jump { 0% { bottom:50px; } 50% { bottom:150px; } 100% { bottom:50px; } }
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="startScreen">
+    <h1>Giải cứu học sinh khỏi tủ lạnh!</h1>
+    <p>Cách chơi: Trả lời đúng để nhận code mở cửa. Trả lời sai → nhiệt tăng, học sinh run sợ, tuyết rơi nhiều. Sai quá nhiều sẽ đóng băng!</p>
+    <button onclick="startGame()">Bắt đầu</button>
+</div>
+<!-- Ice Overlay -->
+<div id="iceOverlay" style="
+    position:absolute;
+    top:0; left:0;
+    width:80px; height:100%;
+    pointer-events:none;
+    background:url('assets/ice.png') no-repeat right/cover;
+    z-index:50;
+    opacity:0.8;
+    filter: blur(2px);
+    transition: width 1s linear;
+"></div>
+<!-- Game Screen -->
+<div id="gameScreen">
+    <div id="fridgeContainer">
+        <img src="assets/student1.png" id="student1" class="student" style="left:103px;">
+        <img src="assets/student2.png" id="student2" class="student" style="left:162px;">
+        <img src="assets/student3.png" id="student3" class="student" style="left:224px;">
+        <img src="assets/student4.png" id="student4" class="student" style="left:283px;">
+        <img src="assets/student5.png" id="student5" class="student" style="left:337px;">
+    </div>
+    <div id="heatBar"><div id="heatFill"></div></div>
+    <div id="codes">Số code đã thu thập: 0/5</div>
+    <div class="question" id="question"></div>
+    <div class="answers" id="answers"></div>
+    <div id="timer">Thời gian còn lại: <span id="time">10</span>s</div>
+</div>
+
+<!-- Snow effect -->
+<div id="snowflake"></div>
+
+<!-- End Screen -->
+<div id="endScreen" style="display:none;">
+    <h1 id="endMessage"></h1>
+    <button onclick="location.reload()">Chơi lại</button>
+</div>
+
+<!-- Sounds -->
+<audio id="tick" src="assets/tick.mp3"></audio>
+<audio id="success" src="assets/success.mp3"></audio>
+<audio id="fail" src="assets/fail.mp3"></audio>
+<audio id="openDoor" src="assets/openDoor.mp3"></audio>
+<audio id="bgm" src="assets/bgm.mp3" loop></audio>
+<audio id="winSound" src="assets/win.mp3"></audio>
+<audio id="loseSound" src="assets/lose.mp3"></audio>
+
+<script>
+// Questions
+const questions = [
+    {q:"Thức ăn chưa sử dụng xong nên làm gì?", a:["Đổ vào thùng rác","Cất vào tủ lạnh","Vứt ra ngoài đường","Đổ xuống cống"], correct:1},
+    {q:"Tủ lạnh có chức năng chính là gì?", a:["Bảo quản thực phẩm","Làm kem","Sấy khô đồ","Làm nóng thực phẩm"], correct:0},
+    {q:"Tủ lạnh thường có mấy ngăn?", a:["Không có","Một","Hai","Ba"], correct:2},
+    {q:"Tại sao không nên mở cửa tủ lạnh lâu?", a:["Tốn điện","Làm hư ngay","Không ảnh hưởng","Gây tiếng ồn"], correct:0},
+    {q:"Kem bảo quản ở ngăn nào?", a:["Ngăn rau","Ngăn đá","Ngăn làm lạnh","Cửa tủ"], correct:1}
+];
+
+let currentQ=0, heat=0, codes=0, wrongCount=0, timeLeft=10, timer;
+let snowInterval; // để snow rơi liên tục khi sai
+
+function startGame(){
+    document.getElementById('startScreen').style.display='none';
+    document.getElementById('gameScreen').style.display='block';
+    document.getElementById('bgm').play();
+    showQuestion();
+}
+
+function showQuestion(){
+    if(currentQ>=questions.length){ endGame(); return; }
+    const q=questions[currentQ];
+    document.getElementById('question').innerText=q.q;
+    const ansDiv=document.getElementById('answers'); ansDiv.innerHTML='';
+    q.a.forEach((ans,idx)=>{
+        const btn=document.createElement('button'); btn.innerText=ans;
+        btn.onclick=()=> selectAnswer(idx); ansDiv.appendChild(btn);
+    });
+    startTimer();
+}
+
+function startTimer() {
+    timeLeft = 10;
+    document.getElementById('time').innerText = timeLeft;
+
+    const tickSound = document.getElementById('tick');
+
+    // Nếu chưa sai đủ 3 thì mới bật âm tick
+    if (wrongCount < 3) {
+        tickSound.currentTime = 0;
+        tickSound.play();
+    }
+
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('time').innerText = timeLeft;
+
+        if (wrongCount >= 3) {
+            // Tắt âm và dừng luôn timer
+            tickSound.pause();
+            tickSound.currentTime = 0;
+            clearInterval(timer);
+            return;
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            selectAnswer(-1);
+        }
+
+    }, 1000);
+}
+
+
+function selectAnswer(idx){
+    clearInterval(timer);
+    const q=questions[currentQ];
+    if(idx===q.correct){ 
+        codes++; document.getElementById('codes').innerText=`Số code đã thu thập: ${codes}/5`; 
+        animateStudent(true); document.getElementById('success').play(); 
+    }else{ 
+        wrongCount++; 
+        handleWrong();
+    }
+    currentQ++; setTimeout(showQuestion,1000);
+}
+
+function handleWrong(){
+    heat++; updateHeatBar(); animateStudent(false); document.getElementById('fail').play();
+    if(!snowInterval){ startSnow(); } // start snow nếu chưa
+    if(heat>=3) endGame();
+}
+
+function updateHeatBar(){
+    const fill=document.getElementById('heatFill'); let percent=(heat/3)*100;
+    fill.style.width=percent+'%';
+    if(percent<50) fill.style.backgroundColor='#00ff00';
+    else if(percent<100) fill.style.backgroundColor='#ffff00';
+    else fill.style.backgroundColor='#ff0000';
+    if(heat>=3){
+        document.querySelectorAll('.student').forEach(s=>s.classList.add('frozen'));
+    }
+}
+
+function animateStudent(correct){
+    const students = [...document.querySelectorAll('.student')];
+    if(correct){
+        // Chỉ học sinh hiện tại nhảy ra
+        const stu = students[Math.min(codes, students.length-1)];
+        stu.style.animation='jump 0.6s ease'; 
+        setTimeout(()=>stu.style.bottom='400px',500);
+        setTimeout(()=>stu.style.display='none',800);
+        document.getElementById('success').play();
+    } else {
+        // Tất cả học sinh rung lắc
+        students.forEach(stu => {
+            stu.style.animation='shake 0.5s';
+        });
+        setTimeout(()=>students.forEach(stu => stu.style.animation=''),500);
+        document.getElementById('fail').play();
+    }
+}
+
+// Snow effect dựa trên số lần sai
+function startSnow(){
+    const snowflake=document.getElementById('snowflake');
+    snowInterval=setInterval(()=>{
+        const snow=document.createElement('div');
+        snow.classList.add('snow');
+        snow.style.left=Math.random()*100+'%';
+        snow.style.animationDuration=(2+Math.random()*3)+'s';
+        snowflake.appendChild(snow);
+        setTimeout(()=>snow.remove(),5000);
+    }, wrongCount*100); // sai nhiều rơi nhanh hơn
+}
+
+function endGame() {
+    clearInterval(timer);
+    clearInterval(snowInterval);
+
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('endScreen').style.display = 'flex';
+
+    const msg = document.getElementById('endMessage');
+
+    if (codes >= 5) {
+        msg.innerText = "🎉 Chúc mừng! Học sinh được giải cứu!";
+        document.getElementById('openDoor').play();
+        document.getElementById('winSound').play();  // 🔊 âm thắng
+    } else {
+        msg.innerText = "❄️ Oh no! Học sinh bị đóng băng!";
+        document.getElementById('loseSound').play(); // 🔊 âm thua
+    }
+
+    document.getElementById('bgm').pause();
+}
+
+function handleWrong(){
+    heat++; updateHeatBar(); document.getElementById('fail').play();
+    
+    // Tất cả học sinh rung lắc
+    document.querySelectorAll('.student').forEach(stu=>{
+        stu.style.animation='shake 0.5s';
+        setTimeout(()=>stu.style.animation='',500);
+    });
+
+    // Hiệu ứng tuyết
+    if(!snowInterval){ startSnow(); }
+
+    // Hiệu ứng đóng băng từng học sinh từ phải sang trái
+    animateFreezePerStudent();
+    
+    if(heat>=3) endGame();
+}
+
+// Đóng băng từng học sinh
+let freezeIndex = 4; // bắt đầu từ student5 (index 4)
+function animateFreezePerStudent(){
+    const students = [...document.querySelectorAll('.student')];
+    if(freezeIndex < 0) return; // tất cả đã bị đóng băng
+    const stu = students[freezeIndex];
+
+    // Tạo lớp ice trực tiếp phủ lên student
+    const ice = document.createElement('div');
+    ice.style.position='absolute';
+    ice.style.top=stu.offsetTop+'px';
+    ice.style.left=stu.offsetLeft+'px';
+    ice.style.width = '78px'; // rộng hơn học sinh một chút
+    ice.style.height=stu.offsetHeight+'px';
+    ice.style.background="url('assets/ice.png') no-repeat center/cover";
+    ice.style.opacity='0.9';
+    ice.style.filter='blur(0px)';
+    ice.style.zIndex='100';
+    ice.style.transition='all 1s linear';
+    document.getElementById('fridgeContainer').appendChild(ice);
+
+    freezeIndex--; // lần sau sẽ phủ học sinh bên trái
+}
+
+
+// Khi user reload dùng nút "Chơi lại" trên end screen -> location.reload() đã gán sẵn
+
+
+</script>
+
+</body>
+</html>
