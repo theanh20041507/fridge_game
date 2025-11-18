@@ -37,7 +37,24 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 <!-- Start Screen -->
 <div id="startScreen">
     <h1>Giải cứu học sinh khỏi tủ lạnh!</h1>
-    <p>Cách chơi: Trả lời đúng để nhận code mở cửa. Trả lời sai → nhiệt tăng, học sinh run sợ, tuyết rơi nhiều. Sai quá nhiều sẽ đóng băng!</p>
+    <div style="
+        max-width:500px; 
+        margin:20px auto; 
+        padding:15px 20px; 
+        background: rgba(0,0,0,0.4); /* nền bán trong suốt */
+        backdrop-filter: blur(5px); /* mờ nền phía sau */
+        border-radius:15px; 
+        text-align:center; 
+        color:white; 
+        font-size:16px; 
+        line-height:1.5;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    ">
+        ❄️ Giúp học sinh bị kẹt trong tủ lạnh thoát ra!<br>
+        ✅ Chọn học sinh và trả lời câu hỏi đúng để cứu.<br>
+        ⚠️ Trả lời sai → học sinh đóng băng và tuyết rơi nhiều hơn.<br>
+        🎯 Cứu càng nhiều học sinh càng tốt trước khi bị đóng băng hoàn toàn!
+    </div>
     <button onclick="startGame()">Bắt đầu</button>
 </div>
 <!-- Ice Overlay -->
@@ -85,9 +102,10 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 <audio id="bgm" src="assets/bgm.mp3" loop></audio>
 <audio id="winSound" src="assets/win.mp3"></audio>
 <audio id="loseSound" src="assets/lose.mp3"></audio>
-
 <script>
-// Questions
+    // ----------------------------
+// DỮ LIỆU CÂU HỎI CHO TỪNG STUDENT
+// ----------------------------
 const questions = [
     {q:"Thức ăn chưa sử dụng xong nên làm gì?", a:["Đổ vào thùng rác","Cất vào tủ lạnh","Vứt ra ngoài đường","Đổ xuống cống"], correct:1},
     {q:"Tủ lạnh có chức năng chính là gì?", a:["Bảo quản thực phẩm","Làm kem","Sấy khô đồ","Làm nóng thực phẩm"], correct:0},
@@ -96,191 +114,225 @@ const questions = [
     {q:"Kem bảo quản ở ngăn nào?", a:["Ngăn rau","Ngăn đá","Ngăn làm lạnh","Cửa tủ"], correct:1}
 ];
 
-let currentQ=0, heat=0, codes=0, wrongCount=0, timeLeft=10, timer;
-let snowInterval; // để snow rơi liên tục khi sai
+// ----------------------------
+// BIẾN HỆ THỐNG
+// ----------------------------
+const students = document.querySelectorAll('.student');
 
-function startGame(){
-    document.getElementById('startScreen').style.display='none';
-    document.getElementById('gameScreen').style.display='block';
-    document.getElementById('bgm').play();
-    showQuestion();
+const qBox = document.getElementById('question');
+const ansBox = document.getElementById('answers');
+
+let currentStudent = null;
+let savedCount = 0;
+let frozenCount = 0;
+
+let timeLeft = 10; // thời gian cho mỗi câu hỏi
+let timer;
+let snowInterval;
+
+// ----------------------------
+// START GAME
+// ----------------------------
+function startGame() {
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+    document.getElementById("bgm").play();
 }
 
-function showQuestion(){
-    if(currentQ>=questions.length){ endGame(); return; }
-    const q=questions[currentQ];
-    document.getElementById('question').innerText=q.q;
-    const ansDiv=document.getElementById('answers'); ansDiv.innerHTML='';
-    q.a.forEach((ans,idx)=>{
-        const btn=document.createElement('button'); btn.innerText=ans;
-        btn.onclick=()=> selectAnswer(idx); ansDiv.appendChild(btn);
+// ----------------------------
+// CHỌN STUDENT ĐỂ HỎI
+// ----------------------------
+students.forEach((stu, index) => {
+    stu.dataset.state = "alive";
+
+    stu.addEventListener("click", () => {
+        if (stu.dataset.state !== "alive") return;
+        currentStudent = index;
+        showQuestion(index);
     });
-    startTimer();
+});
+
+// ----------------------------
+// HIỆN CÂU HỎI
+// ----------------------------
+function showQuestion(i) {
+    const q = questions[i];
+    qBox.innerText = q.q;
+
+    ansBox.innerHTML = "";
+    q.a.forEach((ans, idx) => {
+        let btn = document.createElement("button");
+        btn.innerText = ans;
+        btn.onclick = () => checkAnswer(idx);
+        ansBox.appendChild(btn);
+    });
+
+    qBox.style.display = "block";
+    ansBox.style.display = "block";
+
+    startTimerForStudent(); // bắt đầu 10s cho học sinh này
 }
 
-function startTimer() {
-    timeLeft = 10;
-    document.getElementById('time').innerText = timeLeft;
+// ----------------------------
+// CHECK ĐÚNG / SAI
+// ----------------------------
+function checkAnswer(ans) {
+    clearInterval(timer); // dừng timer khi trả lời
 
-    const tickSound = document.getElementById('tick');
+    const q = questions[currentStudent];
 
-    // Nếu chưa sai đủ 3 thì mới bật âm tick
-    if (wrongCount < 3) {
-        tickSound.currentTime = 0;
-        tickSound.play();
-    }
-
-    timer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('time').innerText = timeLeft;
-
-        if (wrongCount >= 3) {
-            // Tắt âm và dừng luôn timer
-            tickSound.pause();
-            tickSound.currentTime = 0;
-            clearInterval(timer);
-            return;
-        }
-
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            selectAnswer(-1);
-        }
-
-    }, 1000);
-}
-
-
-function selectAnswer(idx){
-    clearInterval(timer);
-    const q=questions[currentQ];
-    if(idx===q.correct){ 
-        codes++; document.getElementById('codes').innerText=`Số code đã thu thập: ${codes}/5`; 
-        animateStudent(true); document.getElementById('success').play(); 
-    }else{ 
-        wrongCount++; 
-        handleWrong();
-    }
-    currentQ++; setTimeout(showQuestion,1000);
-}
-
-function handleWrong(){
-    heat++; updateHeatBar(); animateStudent(false); document.getElementById('fail').play();
-    if(!snowInterval){ startSnow(); } // start snow nếu chưa
-    if(heat>=3) endGame();
-}
-
-function updateHeatBar(){
-    const fill=document.getElementById('heatFill'); let percent=(heat/3)*100;
-    fill.style.width=percent+'%';
-    if(percent<50) fill.style.backgroundColor='#00ff00';
-    else if(percent<100) fill.style.backgroundColor='#ffff00';
-    else fill.style.backgroundColor='#ff0000';
-    if(heat>=3){
-        document.querySelectorAll('.student').forEach(s=>s.classList.add('frozen'));
-    }
-}
-
-function animateStudent(correct){
-    const students = [...document.querySelectorAll('.student')];
-    if(correct){
-        // Chỉ học sinh hiện tại nhảy ra
-        const stu = students[codes - 1];
-        stu.style.animation='jump 0.6s ease'; 
-        setTimeout(()=>stu.style.bottom='400px',500);
-        setTimeout(()=>stu.style.display='none',800);
+    if (ans === q.correct) {
+        saveStudent(currentStudent);
         document.getElementById('success').play();
     } else {
-        // Tất cả học sinh rung lắc
-        students.forEach(stu => {
-            stu.style.animation='shake 0.5s';
-        });
-        setTimeout(()=>students.forEach(stu => stu.style.animation=''),500);
+        freezeStudent(currentStudent);
         document.getElementById('fail').play();
+    }
+
+    qBox.style.display = "none";
+    ansBox.style.display = "none";
+
+    currentStudent = null; // chưa chọn student
+    checkGameEnd();
+}
+
+// ----------------------------
+// CỨU STUDENT (JUMP)
+// ----------------------------
+function saveStudent(i) {
+    let st = students[i];
+    st.dataset.state = "saved";
+    savedCount++;
+
+    st.style.animation = "jump 0.6s ease";
+    setTimeout(() => st.style.bottom = "400px", 500);
+    setTimeout(() => st.style.display = "none", 900);
+}
+
+// ----------------------------
+// ĐÓNG BĂNG STUDENT SAI
+// ----------------------------
+function freezeStudent(i) {
+    let st = students[i];
+    st.dataset.state = "frozen";
+    frozenCount++;
+
+    st.classList.add("frozen");
+
+    const ice = document.createElement("div");
+    ice.style.position = "absolute";
+    ice.style.top = st.offsetTop + "px";
+    ice.style.left = st.offsetLeft + "px";
+    ice.style.width = "78px";
+    ice.style.height = st.offsetHeight + "px";
+    ice.style.background = "url('assets/ice.png') center/cover no-repeat";
+    ice.style.opacity = "1";
+    ice.style.zIndex = "100";
+    document.getElementById("fridgeContainer").appendChild(ice);
+
+    // bắt đầu snow nếu chưa chạy
+    if (!snowInterval) startSnow();
+}
+
+// ----------------------------
+
+// ----------------------------
+// KIỂM TRA KẾT THÚC GAME
+// ----------------------------
+function checkGameEnd() {
+    // Nếu tất cả học sinh đã được trả lời (saved + frozen = tổng số học sinh)
+    if (savedCount + frozenCount === students.length) {
+        endGame(savedCount); // truyền số học sinh đã cứu
     }
 }
 
-// Snow effect dựa trên số lần sai
-function startSnow(){
-    const snowflake=document.getElementById('snowflake');
-    snowInterval=setInterval(()=>{
-        const snow=document.createElement('div');
-        snow.classList.add('snow');
-        snow.style.left=Math.random()*100+'%';
-        snow.style.animationDuration=(2+Math.random()*3)+'s';
-        snowflake.appendChild(snow);
-        setTimeout(()=>snow.remove(),5000);
-    }, wrongCount*100); // sai nhiều rơi nhanh hơn
-}
 
-function endGame() {
-    clearInterval(timer);
-    clearInterval(snowInterval);
-
-    document.getElementById('gameScreen').style.display = 'none';
-    document.getElementById('endScreen').style.display = 'flex';
+// ----------------------------
+// END GAME
+// ----------------------------
+function endGame(saved) {
+    document.getElementById('gameScreen').style.display = "none";
+    document.getElementById('endScreen').style.display = "flex";
 
     const msg = document.getElementById('endMessage');
 
-    if (codes >= 5) {
-        msg.innerText = "🎉 Chúc mừng! Học sinh được giải cứu!";
-        document.getElementById('openDoor').play();
-        document.getElementById('winSound').play();  // 🔊 âm thắng
+    // Tạo nội dung trong ô chữ nhật nền mờ
+    let content = "";
+
+    if (saved === students.length) {
+        content = `🎉Chúc mừng bạn đã cứu được tất cả học sinh!`;
+        document.getElementById('winSound').play();
     } else {
-        msg.innerText = "❄️ Oh no! Học sinh bị đóng băng!";
-        document.getElementById('loseSound').play(); // 🔊 âm thua
+        content = `❄️ Bạn đã cứu được ${saved} học sinh.`;
+        document.getElementById('loseSound').play();
     }
 
-    document.getElementById('bgm').pause();
-}
-
-function handleWrong(){
-    heat++; updateHeatBar(); document.getElementById('fail').play();
-    
-    // Tất cả học sinh rung lắc
-    document.querySelectorAll('.student').forEach(stu=>{
-        stu.style.animation='shake 0.5s';
-        setTimeout(()=>stu.style.animation='',500);
-    });
-
-    // Hiệu ứng tuyết
-    if(!snowInterval){ startSnow(); }
-
-    // Hiệu ứng đóng băng từng học sinh từ phải sang trái
-    animateFreezePerStudent();
-    
-    if(heat>=3) endGame();
-}
-
-// Đóng băng từng học sinh
-let freezeIndex = 4; // bắt đầu từ student5 (index 4)
-function animateFreezePerStudent(){
-    const students = [...document.querySelectorAll('.student')];
-    if(freezeIndex < 0) return; // tất cả đã bị đóng băng
-    const stu = students[freezeIndex];
-
-    // Tạo lớp ice trực tiếp phủ lên student
-    const ice = document.createElement('div');
-    ice.style.position='absolute';
-    ice.style.top=stu.offsetTop+'px';
-    ice.style.left=stu.offsetLeft+'px';
-    ice.style.width = '78px'; // rộng hơn học sinh một chút
-    ice.style.height=stu.offsetHeight+'px';
-    ice.style.background="url('assets/ice.png') no-repeat center/cover";
-    ice.style.opacity='0.9';
-    ice.style.filter='blur(0px)';
-    ice.style.zIndex='100';
-    ice.style.transition='all 1s linear';
-    document.getElementById('fridgeContainer').appendChild(ice);
-
-    freezeIndex--; // lần sau sẽ phủ học sinh bên trái
+    msg.innerHTML = `
+        <div style="
+            max-width:500px; 
+            margin:20px auto; 
+            padding:15px 20px; 
+            background: rgba(0,0,0,0.4); 
+            backdrop-filter: blur(5px); 
+            border-radius:15px; 
+            text-align:center; 
+            color:white; 
+            font-size:16px; 
+            line-height:1.5;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        ">
+            ${content}
+        </div>
+    `;
 }
 
 
-// Khi user reload dùng nút "Chơi lại" trên end screen -> location.reload() đã gán sẵn
 
+// ----------------------------
+// TIMER CHO MỖI HỌC SINH
+// ----------------------------
+function startTimerForStudent() {
+    clearInterval(timer);
+    timeLeft = 10;
+    document.getElementById('time').innerText = timeLeft;
+
+    timer = setInterval(() => {
+        if (currentStudent === null) return; // chưa chọn student
+        timeLeft--;
+        document.getElementById('time').innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            if (currentStudent !== null) {
+                freezeStudent(currentStudent);
+                document.getElementById('fail').play();
+                qBox.style.display = ansBox.style.display = "none";
+                currentStudent = null;
+                checkGameEnd();
+            }
+        }
+    }, 1000);
+}
+
+// ----------------------------
+// HIỆU ỨNG TUYẾT
+// ----------------------------
+function startSnow() {
+    const snowflake = document.getElementById('snowflake');
+    snowInterval = setInterval(() => {
+        const snow = document.createElement('div');
+        snow.classList.add('snow');
+        snow.style.left = Math.random() * 100 + '%';
+        snow.style.animationDuration = (2 + Math.random() * 3) + 's';
+        snowflake.appendChild(snow);
+        setTimeout(() => snow.remove(), 5000);
+    }, 200);
+}
 
 </script>
+
+
+
 
 </body>
 </html>
