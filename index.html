@@ -19,7 +19,6 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 #gameScreen { display:none; background: url('assets/background.png') no-repeat center/cover; width:100%; height:100vh; position:relative; }
 #fridgeContainer { position:relative;transform: scale(1.2); width:500px; height:400px; margin:20px auto; background:url('assets/fridge.png') no-repeat center/cover; }
 .student { width:60px; height:60px; position:absolute; bottom:150px; transition: all 0.5s ease; }
-#heatBar { width:300px; height:20px; border:2px solid #000; margin:10px auto; position:relative; }
 #heatFill { height:100%; width:0%; background-color:#00ff00; transition: width 0.3s, background-color 0.3s; }
 #codes { margin:10px; font-size:18px; color:#fff; text-shadow:1px 1px #000; }
 .question { margin:20px; font-size:20px; color:#fff; text-shadow:1px 1px #000; }
@@ -36,8 +35,17 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 
 <!-- Start Screen -->
 <div id="startScreen">
-    <h1>Giải cứu học sinh khỏi tủ lạnh!</h1>
+    <h1 style="  font-family: 'Arial', sans-serif;
+    font-size: 50px;
+    color: white; /* màu chữ bên trong */
+    text-align: center;
+    text-shadow:
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000; /* tạo viền đen xung quanh chữ */ ">Giải cứu thú cưng khỏi tủ lạnh</h1>
     <div style="
+        
         max-width:500px; 
         margin:20px auto; 
         padding:15px 20px; 
@@ -46,16 +54,29 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
         border-radius:15px; 
         text-align:center; 
         color:white; 
-        font-size:16px; 
+        font-size:30px; 
         line-height:1.5;
         box-shadow: 0 0 10px rgba(0,0,0,0.5);
     ">
-        ❄️ Giúp học sinh bị kẹt trong tủ lạnh thoát ra!<br>
-        ✅ Chọn học sinh và trả lời câu hỏi đúng để cứu.<br>
-        ⚠️ Trả lời sai → học sinh đóng băng và tuyết rơi nhiều hơn.<br>
-        🎯 Cứu càng nhiều học sinh càng tốt trước khi bị đóng băng hoàn toàn!
+        ❄️ Giúp thú cưng bị kẹt trong tủ lạnh thoát ra!<br>
+        ✅ Chọn thú cưng và trả lời câu hỏi đúng để cứu.<br>
+        ⚠️ Trả lời sai → thú cưng đóng băng và tuyết rơi nhiều hơn.<br>
+        🎯 Cứu càng nhiều thú cưng càng tốt,Try your best !
     </div>
-    <button onclick="startGame()">Bắt đầu</button>
+    <button onclick="startGame()" style="
+    padding: 15px 40px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(45deg, #00c6ff, #0072ff);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    ">Bắt đầu</button>
+    
 </div>
 <!-- Ice Overlay -->
 <div id="iceOverlay" style="
@@ -72,17 +93,40 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 <!-- Game Screen -->
 <div id="gameScreen">
     <div id="fridgeContainer">
-        <img src="assets/student1.png" id="student1" class="student" style="left:103px;">
-        <img src="assets/student2.png" id="student2" class="student" style="left:162px;">
-        <img src="assets/student3.png" id="student3" class="student" style="left:224px;">
-        <img src="assets/student4.png" id="student4" class="student" style="left:283px;">
-        <img src="assets/student5.png" id="student5" class="student" style="left:337px;">
+        <img src="assets/dog.png" id="student1" class="student" style="left:103px;">
+        <img src="assets/mouse.png" id="student2" class="student" style="left:162px;">
+        <img src="assets/birt.png" id="student3" class="student" style="left:224px;">
+        <img src="assets/cat.png" id="student4" class="student" style="left:283px;">
+        <img src="assets/rabit.png" id="student5" class="student" style="left:337px;">
     </div>
     <div id="heatBar"><div id="heatFill"></div></div>
-    <div id="codes">Số code đã thu thập: 0/5</div>
-    <div class="question" id="question"></div>
-    <div class="answers" id="answers"></div>
-    <div id="timer">Thời gian còn lại: <span id="time">10</span>s</div>
+    <div class="question" id="question" style="
+    max-width:500px; 
+        margin:20px auto; 
+        padding:10px 15px; 
+        background: rgba(0,0,0,0.4); /* nền bán trong suốt */
+        backdrop-filter: blur(5px); /* mờ nền phía sau */
+        border-radius:15px; 
+        text-align:center; 
+        color:white; 
+        font-size:20px; 
+        line-height:1.5;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+"> </div>
+    <div class="answers" id="answers" style="font-size:18px;"></div>
+    <div id="timer"style="
+    max-width:80px; 
+        margin:20px auto; 
+        padding:10px 15px; 
+        background: rgba(0,0,0,0.4); /* nền bán trong suốt */
+        backdrop-filter: blur(5px); /* mờ nền phía sau */
+        border-radius:15px; 
+        text-align:center; 
+        color:white; 
+        font-size:20px; 
+        line-height:1.5;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+"> <span id="time">15</span>s</div>
 </div>
 
 <!-- Snow effect -->
@@ -91,7 +135,19 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 <!-- End Screen -->
 <div id="endScreen" style="display:none;">
     <h1 id="endMessage"></h1>
-    <button onclick="location.reload()">Chơi lại</button>
+    <button onclick="location.reload()"style="
+    padding: 15px 40px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(45deg, #00c6ff, #0072ff);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    ">Chơi lại</button>
 </div>
 
 <!-- Sounds -->
@@ -103,31 +159,51 @@ body { margin:0; font-family: Arial, sans-serif; text-align:center; overflow:hid
 <audio id="winSound" src="assets/win.mp3"></audio>
 <audio id="loseSound" src="assets/lose.mp3"></audio>
 <script>
-    // ----------------------------
-// DỮ LIỆU CÂU HỎI CHO TỪNG STUDENT
+// ----------------------------
+// DỮ LIỆU CÂU HỎI
 // ----------------------------
 const questions = [
-    {q:"Thức ăn chưa sử dụng xong nên làm gì?", a:["Đổ vào thùng rác","Cất vào tủ lạnh","Vứt ra ngoài đường","Đổ xuống cống"], correct:1},
-    {q:"Tủ lạnh có chức năng chính là gì?", a:["Bảo quản thực phẩm","Làm kem","Sấy khô đồ","Làm nóng thực phẩm"], correct:0},
-    {q:"Tủ lạnh thường có mấy ngăn?", a:["Không có","Một","Hai","Ba"], correct:2},
-    {q:"Tại sao không nên mở cửa tủ lạnh lâu?", a:["Tốn điện","Làm hư ngay","Không ảnh hưởng","Gây tiếng ồn"], correct:0},
-    {q:"Kem bảo quản ở ngăn nào?", a:["Ngăn rau","Ngăn đá","Ngăn làm lạnh","Cửa tủ"], correct:1}
+    {q:"Tác dụng chính của tủ lạnh trong gia đình là gì?", 
+     a:["Làm nóng thực phẩm trước khi ăn",
+        "Bảo quản thực phẩm được lâu và ít mất chất dinh dưỡng",
+        "Làm khô thực phẩm nhanh hơn",
+        "Dùng để trưng bày thực phẩm"], correct:1},
+
+    {q:"Thực phẩm tươi sống như thịt, cá muốn bảo quản dài ngày nên để ở khoang nào?", 
+     a:["Khoang làm lạnh", "Ngăn đựng rau", "Khoang cấp đông", "Cánh tủ lạnh"], correct:2},
+
+    {q:"Biểu hiện nào sau đây cho thấy tủ lạnh đang gặp vấn đề bất thường?", 
+     a:["Tủ lạnh làm lạnh bình thường", 
+        "Bên trong tủ sáng đèn khi mở",
+        "Tủ phát ra tiếng kêu lạ và rung mạnh",
+        "Không gian trong tủ thoáng và sạch"], correct:2},
+
+    {q:"Trong các lựa chọn sau, việc nào không nên làm khi sử dụng tủ lạnh?", 
+     a:["Để tủ lạnh gần bếp gas", 
+        "Đậy kín thức ăn trước khi cho vào tủ", 
+        "Sắp xếp thực phẩm gọn gàng", 
+        "Kiểm tra và loại bỏ đồ hỏng định kỳ"], correct:0},
+
+    {q:"Lí do vì sao không nên để tủ lạnh quá đầy thực phẩm?", 
+     a:["Làm tủ lạnh chạy êm hơn", 
+        "Giúp tiết kiệm điện năng", 
+        "Làm không khí lạnh khó lưu thông, giảm hiệu quả làm lạnh", 
+        "Làm đá nhanh hơn"], correct:2}
 ];
 
 // ----------------------------
 // BIẾN HỆ THỐNG
 // ----------------------------
 const students = document.querySelectorAll('.student');
-
 const qBox = document.getElementById('question');
 const ansBox = document.getElementById('answers');
-
-let currentStudent = null;
 let savedCount = 0;
 let frozenCount = 0;
 
-let timeLeft = 10; // thời gian cho mỗi câu hỏi
+let currentStudent = null;
+let selectedAnswer = null;
 let timer;
+let timeLeft = 15;
 let snowInterval;
 
 // ----------------------------
@@ -140,11 +216,10 @@ function startGame() {
 }
 
 // ----------------------------
-// CHỌN STUDENT ĐỂ HỎI
+// CHỌN STUDENT
 // ----------------------------
 students.forEach((stu, index) => {
     stu.dataset.state = "alive";
-
     stu.addEventListener("click", () => {
         if (stu.dataset.state !== "alive") return;
         currentStudent = index;
@@ -156,32 +231,83 @@ students.forEach((stu, index) => {
 // HIỆN CÂU HỎI
 // ----------------------------
 function showQuestion(i) {
+    currentStudent = i;
+    selectedAnswer = null;
     const q = questions[i];
     qBox.innerText = q.q;
-
     ansBox.innerHTML = "";
+
     q.a.forEach((ans, idx) => {
         let btn = document.createElement("button");
         btn.innerText = ans;
-        btn.onclick = () => checkAnswer(idx);
+        btn.style.transition = "all 0.3s ease";
+        btn.style.border = "2px solid transparent";
+        btn.style.backgroundColor = "#fff";
+        btn.style.color = "#000";
+        btn.onclick = () => selectAnswer(idx, btn);
         ansBox.appendChild(btn);
     });
 
     qBox.style.display = "block";
     ansBox.style.display = "block";
 
-    startTimerForStudent(); // bắt đầu 10s cho học sinh này
+    startTimerForStudent();
 }
 
 // ----------------------------
-// CHECK ĐÚNG / SAI
+// CHỌN ĐÁP ÁN (Bôi đậm viền)
+function selectAnswer(idx, btn) {
+    if (selectedAnswer !== null) return;
+    selectedAnswer = idx;
+
+    const buttons = ansBox.querySelectorAll("button");
+    buttons.forEach(b => b.style.border = "2px solid transparent");
+
+    btn.style.border = "3px solid yellow";
+    btn.style.fontWeight = "bold";
+}
+
 // ----------------------------
-function checkAnswer(ans) {
-    clearInterval(timer); // dừng timer khi trả lời
+// TIMER CHO CÂU HỎI
+// ----------------------------
+function startTimerForStudent() {
+    clearInterval(timer);
+    timeLeft = 15;
+    document.getElementById('time').innerText = timeLeft;
 
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('time').innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            revealAnswer();
+        }
+    }, 1000);
+}
+
+// ----------------------------
+// HIỆN KẾT QUẢ SAU 10s HOẶC CHỌN
+// ----------------------------
+function revealAnswer() {
     const q = questions[currentStudent];
+    const buttons = ansBox.querySelectorAll("button");
 
-    if (ans === q.correct) {
+    buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.correct) {
+            btn.style.backgroundColor = "green";
+            btn.style.color = "white";
+            btn.style.fontWeight = "bold";
+        } else if (selectedAnswer === idx && selectedAnswer !== q.correct) {
+            btn.style.backgroundColor = "red";
+            btn.style.color = "white";
+            btn.style.fontWeight = "bold";
+        }
+    });
+
+    // hiệu ứng học sinh
+    if (selectedAnswer === q.correct) {
         saveStudent(currentStudent);
         document.getElementById('success').play();
     } else {
@@ -189,15 +315,13 @@ function checkAnswer(ans) {
         document.getElementById('fail').play();
     }
 
-    qBox.style.display = "none";
-    ansBox.style.display = "none";
-
-    currentStudent = null; // chưa chọn student
+    currentStudent = null;
+    selectedAnswer = null;
     checkGameEnd();
 }
 
 // ----------------------------
-// CỨU STUDENT (JUMP)
+// JUMP STUDENT
 // ----------------------------
 function saveStudent(i) {
     let st = students[i];
@@ -207,10 +331,11 @@ function saveStudent(i) {
     st.style.animation = "jump 0.6s ease";
     setTimeout(() => st.style.bottom = "400px", 500);
     setTimeout(() => st.style.display = "none", 900);
+    checkGameEnd();
 }
 
 // ----------------------------
-// ĐÓNG BĂNG STUDENT SAI
+// FREEZE STUDENT
 // ----------------------------
 function freezeStudent(i) {
     let st = students[i];
@@ -230,22 +355,18 @@ function freezeStudent(i) {
     ice.style.zIndex = "100";
     document.getElementById("fridgeContainer").appendChild(ice);
 
-    // bắt đầu snow nếu chưa chạy
     if (!snowInterval) startSnow();
+    checkGameEnd(); // gọi ở đây
 }
-
-// ----------------------------
-
 // ----------------------------
 // KIỂM TRA KẾT THÚC GAME
 // ----------------------------
 function checkGameEnd() {
-    // Nếu tất cả học sinh đã được trả lời (saved + frozen = tổng số học sinh)
+    // Nếu tổng số học sinh đã cứu + đã đóng băng = tổng số học sinh
     if (savedCount + frozenCount === students.length) {
-        endGame(savedCount); // truyền số học sinh đã cứu
+        endGame(savedCount);
     }
 }
-
 
 // ----------------------------
 // END GAME
@@ -255,12 +376,10 @@ function endGame(saved) {
     document.getElementById('endScreen').style.display = "flex";
 
     const msg = document.getElementById('endMessage');
-
-    // Tạo nội dung trong ô chữ nhật nền mờ
     let content = "";
 
     if (saved === students.length) {
-        content = `🎉Chúc mừng bạn đã cứu được tất cả học sinh!`;
+        content = `🎉 Chúc mừng bạn đã cứu được tất cả học sinh!`;
         document.getElementById('winSound').play();
     } else {
         content = `❄️ Bạn đã cứu được ${saved} học sinh.`;
@@ -286,34 +405,6 @@ function endGame(saved) {
     `;
 }
 
-
-
-// ----------------------------
-// TIMER CHO MỖI HỌC SINH
-// ----------------------------
-function startTimerForStudent() {
-    clearInterval(timer);
-    timeLeft = 10;
-    document.getElementById('time').innerText = timeLeft;
-
-    timer = setInterval(() => {
-        if (currentStudent === null) return; // chưa chọn student
-        timeLeft--;
-        document.getElementById('time').innerText = timeLeft;
-
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            if (currentStudent !== null) {
-                freezeStudent(currentStudent);
-                document.getElementById('fail').play();
-                qBox.style.display = ansBox.style.display = "none";
-                currentStudent = null;
-                checkGameEnd();
-            }
-        }
-    }, 1000);
-}
-
 // ----------------------------
 // HIỆU ỨNG TUYẾT
 // ----------------------------
@@ -328,6 +419,7 @@ function startSnow() {
         setTimeout(() => snow.remove(), 5000);
     }, 200);
 }
+
 
 </script>
 
